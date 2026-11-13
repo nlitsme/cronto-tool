@@ -1,0 +1,386 @@
+<style>
+:root{
+  --bg:#eceff4; --surface:#ffffff; --surface-2:#f5f7fa;
+  --tile:#eef1f6;                       /* constant light tile under each code */
+  --border:#d7dbe3; --border-2:#c6ccd6;
+  --ink:#171a20; --muted:#5b636f; --faint:#98a0ac;
+  --accent:#3b5bdb; --accent-ink:#ffffff; --accent-soft:#e7ebfb;
+  --radius:14px; --radius-sm:9px;
+  --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(18,22,30,.06),0 8px 24px -14px rgba(18,22,30,.22);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0b0d11; --surface:#14171d; --surface-2:#0f1319; --tile:#e9edf3;
+    --border:#242a33; --border-2:#323945; --ink:#e7eaf0; --muted:#98a1af; --faint:#69727f;
+    --accent:#7089f2; --accent-ink:#0b0d11; --accent-soft:#1b2130;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#eceff4; --surface:#ffffff; --surface-2:#f5f7fa; --tile:#eef1f6;
+  --border:#d7dbe3; --border-2:#c6ccd6; --ink:#171a20; --muted:#5b636f; --faint:#98a0ac;
+  --accent:#3b5bdb; --accent-ink:#ffffff; --accent-soft:#e7ebfb;
+  --shadow:0 1px 2px rgba(18,22,30,.06),0 8px 24px -14px rgba(18,22,30,.22);
+}
+:root[data-theme="dark"]{
+  --bg:#0b0d11; --surface:#14171d; --surface-2:#0f1319; --tile:#e9edf3;
+  --border:#242a33; --border-2:#323945; --ink:#e7eaf0; --muted:#98a1af; --faint:#69727f;
+  --accent:#7089f2; --accent-ink:#0b0d11; --accent-soft:#1b2130;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -16px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);
+  line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.mono{font-family:var(--font-mono);font-size:.92em}
+.wrap{max-width:1160px;margin:0 auto;padding:clamp(28px,5vw,72px) clamp(18px,4vw,44px)}
+
+.eyebrow{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.eyebrow .mono{color:inherit}
+h1{font-size:clamp(30px,5.5vw,50px);line-height:1.03;letter-spacing:-.02em;
+  font-weight:660;margin:0 0 20px;text-wrap:balance}
+.lead{max-width:66ch;font-size:clamp(15px,1.9vw,17px);color:var(--muted);margin:0}
+.lead strong{color:var(--ink);font-weight:600}
+
+.panel{margin:clamp(32px,5vw,52px) 0;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:clamp(20px,3vw,30px);box-shadow:var(--shadow)}
+.panel__title h2{font-size:18px;font-weight:640;margin:0 0 6px;letter-spacing:-.01em}
+.panel__title p{margin:0 0 20px;color:var(--muted);font-size:14px;max-width:70ch}
+.bytes{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:thin}
+.byte{flex:0 0 auto;min-width:46px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:9px 6px 7px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface-2)}
+.byte__hex{font-family:var(--font-mono);font-size:13px;font-weight:600}
+.byte__lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.byte--len{border-style:dashed;opacity:.72}
+.byte--cmd{background:var(--accent-soft);border-color:transparent}
+.byte--cmd .byte__lbl{color:var(--accent)}
+.byte--param{border-color:var(--border-2)}
+.byte--sel{background:var(--accent);border-color:var(--accent)}
+.byte--sel .byte__hex,.byte--sel .byte__lbl{color:var(--accent-ink)}
+.byte--arb .byte__hex{color:var(--faint)}
+.legend{list-style:none;display:flex;flex-wrap:wrap;gap:8px 20px;margin:18px 0 0;padding:0;
+  font-size:12.5px;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:7px}
+.sw{width:13px;height:13px;border-radius:4px;border:1px solid var(--border-2);flex:0 0 auto}
+.sw--len{background:var(--surface-2);border-style:dashed}
+.sw--cmd{background:var(--accent-soft)}
+.sw--arb{background:var(--surface-2)}
+.sw--param{background:var(--surface-2);border-color:var(--border-2)}
+.sw--sel{background:var(--accent);border-color:var(--accent)}
+.sw--term{background:var(--surface-2)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));
+  gap:clamp(14px,2vw,20px)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--shadow);
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.card:hover{transform:translateY(-3px);border-color:var(--border-2);
+  box-shadow:0 4px 8px rgba(18,22,30,.08),0 16px 34px -16px rgba(18,22,30,.34)}
+.card__code{background:var(--tile);padding:16px;display:flex;justify-content:center;
+  border-bottom:1px solid var(--border)}
+.card__code img{width:100%;max-width:190px;height:auto;display:block;border-radius:8px}
+.card__meta{padding:14px 15px 16px;display:flex;flex-direction:column;gap:9px}
+.card__head{display:flex;align-items:center;gap:9px}
+.chip{font-family:var(--font-mono);font-size:11.5px;font-weight:600;letter-spacing:.03em;
+  color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:3px 7px;white-space:nowrap}
+.card__name{font-size:15px;font-weight:600;margin:0;letter-spacing:-.01em}
+.star{color:var(--accent);font-size:.8em;vertical-align:super}
+.card__hex{font-family:var(--font-mono);font-size:11px;line-height:1.5;word-break:break-all;
+  color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 9px;display:block}
+.card__hex .dim{color:var(--faint)}
+.card__hex .hl{color:var(--accent-ink);background:var(--accent);border-radius:3px;
+  padding:1px 3px;font-weight:700}
+.card__note{margin:0;font-size:12px;color:var(--muted)}
+
+.foot{margin-top:clamp(36px,5vw,56px);padding-top:28px;border-top:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px 48px}
+.foot h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);
+  margin:0 0 12px;font-weight:650}
+.foot ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.foot li,.foot p{font-size:13.5px;color:var(--muted);margin:0}
+.foot strong{color:var(--ink);font-weight:600}
+
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (max-width:520px){.card__code img{max-width:150px}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+</style>
+<article class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">DIGIPASS · Secure Channel · <span class="mono">C0</span> command family</p>
+    <h1>CDP&nbsp;Info query codes</h1>
+    <p class="lead">The <span class="mono">C0</span> device-info codes ask a Cronto hardware token to
+      display one of its own attributes — the reader labels this family <em>“CDP info”</em>.
+      Each code below is one <strong>query</strong>: it carries only a 1-byte selector naming
+      the field to show. The field <em>value</em> lives in the device’s on-screen response,
+      not in the code, so nothing personal is encoded here. All 13 selectors mapped
+      by fuzzing an owned device are reconstructed with the project encoder and verified to
+      round-trip; the layout is cross-checked against a real captured serial-query capture.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="struct-h">
+    <div class="panel__title">
+      <h2 id="struct-h">Payload structure</h2>
+      <p>22-byte container behind a 1-byte length prefix. Only the selector changes between codes;
+         bytes 2–14 are not validated by the scanner (shown here as <span class="mono">11</span> filler).</p>
+    </div>
+    <div class="bytes" role="img" aria-label="Byte layout: length 16, discriminator 00, command C0, five unvalidated bytes, eight unvalidated bytes, parameter prefix 08 01 01 01, selector byte, terminator 00 00">
+      <div class="byte byte--len"><span class="byte__hex">16</span><span class="byte__lbl">length</span></div>
+      <div class="byte byte--disc"><span class="byte__hex">00</span><span class="byte__lbl">00</span></div>
+      <div class="byte byte--cmd"><span class="byte__hex">c0</span><span class="byte__lbl">C0</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--arb"><span class="byte__hex">11</span><span class="byte__lbl">·</span></div>
+      <div class="byte byte--param"><span class="byte__hex">08</span><span class="byte__lbl">08</span></div>
+      <div class="byte byte--param"><span class="byte__hex">01</span><span class="byte__lbl">01</span></div>
+      <div class="byte byte--param"><span class="byte__hex">01</span><span class="byte__lbl">01</span></div>
+      <div class="byte byte--param"><span class="byte__hex">01</span><span class="byte__lbl">01</span></div>
+      <div class="byte byte--sel"><span class="byte__hex">SEL</span><span class="byte__lbl">SEL</span></div>
+      <div class="byte byte--term"><span class="byte__hex">00</span><span class="byte__lbl">00</span></div>
+      <div class="byte byte--term"><span class="byte__hex">00</span><span class="byte__lbl">00</span></div>
+    </div>
+    <ul class="legend">
+      <li><span class="sw sw--len"></span>length prefix (framing)</li>
+      <li><span class="sw sw--cmd"></span>discriminator / command</li>
+      <li><span class="sw sw--arb"></span>unvalidated (arbitrary)</li>
+      <li><span class="sw sw--param"></span>CDP-info parameter</li>
+      <li><span class="sw sw--sel"></span>query selector</li>
+      <li><span class="sw sw--term"></span>terminator</li>
+    </ul>
+  </section>
+
+  <section class="grid" aria-label="Rendered CDP info codes">
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for serial number (selector 01)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 01</span>
+          <h3 class="card__name">serial number</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">01</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for production date (selector 02)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 02</span>
+          <h3 class="card__name">production date</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">02</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for xtal correction (selector 04)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 04</span>
+          <h3 class="card__name">xtal correction <span class="star">✻</span></h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">04</span><span class="dim">0000</span></code>
+        <p class="card__note">✻ &quot;unsupported&quot; on tested firmware</p>
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for battery level (selector 05)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 05</span>
+          <h3 class="card__name">battery level</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">05</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for use count (selector 06)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 06</span>
+          <h3 class="card__name">use count <span class="star">✻</span></h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">06</span><span class="dim">0000</span></code>
+        <p class="card__note">✻ &quot;unsupported&quot; on tested firmware</p>
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for PIN error count (selector 07)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 07</span>
+          <h3 class="card__name">PIN error count</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">07</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for PIN status (selector 08)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 08</span>
+          <h3 class="card__name">PIN status</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">08</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for KCV (key check value) (selector 09)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 09</span>
+          <h3 class="card__name">KCV (key check value)</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">09</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for platform ID (selector 0a)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 0a</span>
+          <h3 class="card__name">platform ID</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">0a</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for firmware version (selector 0b)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 0b</span>
+          <h3 class="card__name">firmware version</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">0b</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for firmware checksum (selector 0c)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 0c</span>
+          <h3 class="card__name">firmware checksum</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">0c</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for PIN OK count (selector 0d)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 0d</span>
+          <h3 class="card__name">PIN OK count</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">0d</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+    <article class="card">
+      <div class="card__code">
+        <img loading="lazy" width="518" height="518"
+             src="data:image/png;base64,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"
+             alt="Cronto colour code — CDP info query for device ID (selector 0e)">
+      </div>
+      <div class="card__meta">
+        <div class="card__head">
+          <span class="chip">SEL 0e</span>
+          <h3 class="card__name">device ID</h3>
+        </div>
+        <code class="card__hex"><span class="dim">00c01111111111111111111111111108010101</span><span class="hl">0e</span><span class="dim">0000</span></code>
+        
+      </div>
+    </article>
+  </section>
+
+  <footer class="foot">
+    <div class="foot__col">
+      <h2>Notes</h2>
+      <ul>
+        <li><strong>Unsigned.</strong> <span class="mono">C0</span> codes carry no per-message
+            signature; the token acts on them without validating bytes 2–14.</li>
+        <li><strong>Read-only.</strong> These are diagnostic <em>reads</em> — a query code cannot
+            change device state.</li>
+        <li><strong>✻ unsupported.</strong> Selectors <span class="mono">04</span> (xtal correction)
+            and <span class="mono">06</span> (use count) return “unsupported” on the tested firmware.</li>
+        <li><strong>KCV vs key.</strong> Selector <span class="mono">09</span> returns the key check
+            value — it verifies a candidate key against the device but does not reveal the key.</li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h2>Provenance</h2>
+      <p>Selector map and container layout: <span class="mono">FORMAT.md §3.1</span>
+         (ING Digipass scanner, established by fuzzing an owned device). Images generated by
+         <span class="mono">cronto/encoder.py</span> at size 25, length framing, and confirmed to
+         decode back to each payload with a valid CRC-24.</p>
+    </div>
+  </footer>
+</article>
